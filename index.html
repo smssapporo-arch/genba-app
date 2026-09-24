@@ -16,18 +16,21 @@
   --green:#2b7a4b; --red:#b3261e;
   --tap:52px;
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;min-width:0}
-html,body{margin:0;height:100%}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;min-width:0;overflow-wrap:break-word}
+html{height:100%;overflow-x:hidden;width:100%}
+html,body{margin:0}
 body{
   background:var(--paper); color:var(--ink);
   font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",sans-serif;
   font-size:16px; line-height:1.5;
   font-variant-numeric:tabular-nums;
   display:flex; flex-direction:column;
+  height:100%;
   padding-top:env(safe-area-inset-top);
   width:100%; max-width:100%; overflow-x:hidden;
+  position:relative;
 }
-button,input,select,textarea{font:inherit;color:inherit}
+button,input,select,textarea{font:inherit;color:inherit;max-width:100%}
 
 #bar{
   display:flex;align-items:center;gap:8px;
@@ -39,8 +42,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 #dot.pend{background:#f0a92e}
 #status{font-size:13px;letter-spacing:.02em}
 
-main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.view{display:none;padding:14px 12px 120px}
+main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;width:100%;max-width:100vw}
+.view{display:none;padding:14px 12px 120px;width:100%;max-width:100%}
 .view.on{display:block}
 
 .field{margin-bottom:12px}
@@ -236,8 +239,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--blue);outline-of
    合言葉はここには書きません。初回起動時に端末ごとに
    入力してもらい、その端末の中だけに保存します。       */
 const CFG = {
-  GAS_URL: 'https://script.google.com/macros/s/AKfycbzBCTTd9fw7v53gYEftjnqv2VadAUOf7Uyt_lJySjwUs6MGco1w3IKiXcALH3NjvBDR3g/exec',
-  USERS:   ['あき', 'ます']
+  GAS_URL: 'ここにApps ScriptのウェブアプリURL（.../exec）を貼る',
+  USERS:   ['担当A', '担当B']
 };
 /* ══════════════════════════════════════════════════ */
 
