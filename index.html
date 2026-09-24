@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#16202A">
+<title>施工現場入力</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root{
+  --paper:#e9edf0; --card:#ffffff; --ink:#16202a; --muted:#5b6b78;
+  --line:#ccd5db; --blue:#0f5e8c; --amber:#b87309;
+  --green:#2b7a4b; --red:#b3261e;
+  --tap:52px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;min-width:0}
+html,body{margin:0;height:100%}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",sans-serif;
+  font-size:16px; line-height:1.5;
+  font-variant-numeric:tabular-nums;
+  display:flex; flex-direction:column;
+  padding-top:env(safe-area-inset-top);
+  width:100%; max-width:100%; overflow-x:hidden;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+
+#bar{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;background:var(--ink);color:#fff;flex:none;
+}
+#bar .who{margin-left:auto;font-size:13px;color:#9fb2c0;background:none;border:0;padding:6px}
+#dot{width:9px;height:9px;border-radius:50%;background:var(--green);flex:none}
+#dot.off{background:#7c8d9a}
+#dot.pend{background:#f0a92e}
+#status{font-size:13px;letter-spacing:.02em}
+
+main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.view{display:none;padding:14px 12px 120px}
+.view.on{display:block}
+
+.field{margin-bottom:12px}
+.field>label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+input[type=text],input[type=date],input[type=tel],input[type=number],select,textarea{
+  width:100%;max-width:100%;min-height:var(--tap);padding:10px 12px;
+  background:var(--card);border:1px solid var(--line);border-radius:10px;
+}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 23px,calc(100% - 12px) 23px;background-size:6px 6px;background-repeat:no-repeat}
+textarea{min-height:76px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--blue);outline-offset:1px;border-color:var(--blue)}
+.hide{display:none!important}
+
+.check{display:flex;align-items:center;gap:10px;min-height:var(--tap);padding:0 2px}
+.check input{width:24px;height:24px;flex:none;accent-color:var(--blue)}
+.check label{font-size:15px}
+
+.addbtn{
+  width:100%;min-height:46px;margin-bottom:14px;
+  background:var(--card);border:1px dashed #8fa3b0;border-radius:10px;
+  color:var(--blue);font-size:14px
+}
+
+#actions{
+  position:fixed;left:0;right:0;bottom:56px;
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top,var(--paper) 70%,rgba(233,237,240,0));
+  display:flex;gap:10px
+}
+#actions.hide{display:none!important}
+.btn{flex:1;min-height:56px;border:0;border-radius:12px;background:var(--blue);color:#fff;font-size:17px;font-weight:600}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{flex:0 0 88px;background:var(--card);color:var(--muted);border:1px solid var(--line);font-weight:400;font-size:15px}
+.btn.danger{flex:0 0 88px;background:var(--card);color:var(--red);border:1px solid var(--red);font-weight:400;font-size:15px}
+
+.job{
+  display:block;width:100%;text-align:left;background:var(--card);
+  border:1px solid var(--line);border-left:4px solid var(--line);
+  border-radius:10px;padding:12px 13px;margin-bottom:8px
+}
+.job.pend{border-left-color:var(--amber)}
+.job.done{border-left-color:var(--green)}
+.job .top{display:flex;gap:8px;font-size:13px;color:var(--muted);margin-bottom:3px}
+.job .amt{margin-left:auto;color:var(--ink)}
+.job .site{font-weight:600;font-size:16px}
+.job .work{font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.daysep{font-size:13px;color:var(--muted);margin:16px 0 7px;padding-left:2px}
+.empty{text-align:center;color:var(--muted);padding:56px 24px;font-size:15px}
+
+.hint{background:#dde5ea;border:1px solid var(--line);border-radius:10px;padding:10px 13px;margin-bottom:16px;font-size:13px;color:#384652;line-height:1.6}
+.subtitle{margin:2px 0 6px;font-size:21px}
+.sublead{margin:0 0 18px;font-size:14px;color:var(--muted);line-height:1.6}
+
+#tabs{
+  position:fixed;left:0;right:0;bottom:0;display:flex;
+  background:var(--card);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom)
+}
+#tabs button{flex:1;min-height:56px;border:0;background:none;color:var(--muted);font-size:14px;position:relative}
+#tabs button[aria-pressed=true]{color:var(--blue);font-weight:600;box-shadow:inset 0 2px 0 var(--blue)}
+#badge{
+  position:absolute;top:10px;left:50%;margin-left:22px;
+  background:var(--amber);color:#fff;font-size:11px;font-weight:700;
+  min-width:18px;height:18px;border-radius:9px;padding:0 5px;line-height:18px
+}
+#badge.hide{display:none}
+
+#toast{
+  position:fixed;left:12px;right:12px;bottom:124px;z-index:50;
+  background:var(--ink);color:#fff;padding:12px 14px;border-radius:10px;
+  font-size:14px;opacity:0;transform:translateY(8px);pointer-events:none;
+  transition:opacity .18s,transform .18s
+}
+#toast.on{opacity:1;transform:none}
+#toast.bad{background:var(--red)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <span id="dot"></span><span id="status">読み込み中</span>
+  <button class="who" id="whoBtn">—</button>
+</div>
+
+<main>
+  <!-- 入力 -->
+  <section class="view on" id="v-form">
+    <div class="field"><label for="planDate" id="planLabel">作業日</label>
+      <input type="date" id="planDate"></div>
+    <div class="field hide" id="f-done"><label for="doneDate">完了日</label>
+      <input type="date" id="doneDate"></div>
+    <div class="check"><input type="checkbox" id="mirror" checked><label for="mirror">予定日と完了日が同じ</label></div>
+
+    <div class="field"><label for="companyId">取引会社</label>
+      <select id="companyId"></select></div>
+    <button class="addbtn" id="addCompanyBtn" type="button">＋ 取引会社を追加する</button>
+
+    <div class="field hide" id="f-rep"><label for="repId">営業担当</label>
+      <select id="repId"></select></div>
+    <button class="addbtn hide" id="addRepBtn" type="button">＋ 担当者を追加する</button>
+
+    <div class="field hide" id="f-client"><label for="clientId">販売先（元請）</label>
+      <select id="clientId"></select></div>
+    <button class="addbtn hide" id="addClientBtn" type="button">＋ 販売先を追加する</button>
+
+    <div class="field"><label for="site">現場名</label>
+      <input type="text" id="site" list="sites" autocomplete="off"><datalist id="sites"></datalist></div>
+    <div class="field"><label for="work">内容</label>
+      <input type="text" id="work" list="works" autocomplete="off"><datalist id="works"></datalist></div>
+
+    <div class="field"><label for="amount">金額（円）</label>
+      <input type="number" id="amount" inputmode="numeric" step="1"></div>
+    <div class="field"><label for="parking">駐車場代</label>
+      <input type="number" id="parking" inputmode="numeric" step="1"></div>
+    <div class="field"><label for="toll">高速代</label>
+      <input type="number" id="toll" inputmode="numeric" step="1"></div>
+
+    <div class="field hide" id="f-ic1"><label for="fromIc">出発IC</label><input type="text" id="fromIc"></div>
+    <div class="field hide" id="f-ic2"><label for="toIc">到着IC</label><input type="text" id="toIc"></div>
+
+    <div class="field"><label for="note">備考</label><textarea id="note"></textarea></div>
+    <div class="check"><input type="checkbox" id="assessed"><label for="assessed">査定済み</label></div>
+    <div class="check"><input type="checkbox" id="billed"><label for="billed">請求済み</label></div>
+  </section>
+
+  <!-- 取引会社を追加 -->
+  <section class="view" id="v-addCompany">
+    <h2 class="subtitle">取引会社を追加</h2>
+    <p class="sublead">請求締日と支払スパンは請求の計算に使われます。分かる範囲で正しく入れてください。あとからシートで直すこともできます。</p>
+    <div class="field"><label for="nc-name">会社名</label>
+      <input type="text" id="nc-name" placeholder="例：株式会社北都建設"></div>
+    <div class="field"><label for="nc-short">短縮名称（プルダウンに出る名前）</label>
+      <input type="text" id="nc-short" placeholder="空欄なら会社名をそのまま使います"></div>
+    <div class="field"><label for="nc-closing">請求締日</label>
+      <select id="nc-closing">
+        <option value="末日">末日</option>
+        <option value="20">20日</option>
+        <option value="25">25日</option>
+        <option value="15">15日</option>
+        <option value="10">10日</option>
+      </select></div>
+    <div class="field"><label for="nc-span">支払スパン</label>
+      <select id="nc-span">
+        <option value="翌月">翌月</option>
+        <option value="翌々月">翌々月</option>
+        <option value="当月">当月</option>
+      </select></div>
+    <div class="field"><label for="nc-address">住所（任意）</label>
+      <input type="text" id="nc-address"></div>
+    <div class="field"><label for="nc-tel">電話番号（任意）</label>
+      <input type="tel" inputmode="tel" id="nc-tel"></div>
+  </section>
+
+  <!-- 担当者を追加 -->
+  <section class="view" id="v-addRep">
+    <h2 class="subtitle">担当者を追加</h2>
+    <p class="sublead" id="addRepLead"></p>
+    <div class="field"><label for="nr-name">氏名</label>
+      <input type="text" id="nr-name" placeholder="例：佐藤"></div>
+    <div class="field"><label for="nr-title">役職（任意）</label>
+      <input type="text" id="nr-title" placeholder="例：課長"></div>
+  </section>
+
+  <!-- 販売先を追加 -->
+  <section class="view" id="v-addClient">
+    <h2 class="subtitle">販売先を追加</h2>
+    <p class="sublead" id="addClientLead"></p>
+    <div class="field"><label for="nl-name">販売先の名前</label>
+      <input type="text" id="nl-name" placeholder="例：北都建設"></div>
+  </section>
+
+  <!-- 一覧 -->
+  <section class="view" id="v-list"><div id="listBody"></div></section>
+</main>
+
+<div id="actions">
+  <button class="btn ghost hide" id="cancelBtn">やめる</button>
+  <button class="btn danger hide" id="deleteBtn">削除</button>
+  <button class="btn" id="saveBtn">保存する</button>
+</div>
+
+<nav id="tabs">
+  <button id="tab-form" aria-pressed="true">入力</button>
+  <button id="tab-list" aria-pressed="false">一覧<span id="badge" class="hide">0</span></button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+/* ═══ 設定 ═══════════════════════════════════════════
+   この2つだけ書き換えれば動きます。
+   合言葉はここには書きません。初回起動時に端末ごとに
+   入力してもらい、その端末の中だけに保存します。       */
+const CFG = {
+  GAS_URL: 'https://script.google.com/macros/s/AKfycbzBCTTd9fw7v53gYEftjnqv2VadAUOf7Uyt_lJySjwUs6MGco1w3IKiXcALH3NjvBDR3g/exec',
+  USERS:   ['あき', 'ます']
+};
+/* ══════════════════════════════════════════════════ */
+
+const KEYS = ['jobId','planDate','doneDate','companyId','repId','clientId',
+              'site','work','amount','parking','toll','note',
+              'assessed','billed','fromIc','toIc','enteredBy'];
+
+const $ = id => document.getElementById(id);
+const LS = {
+  get(k, d){ try{ return JSON.parse(localStorage.getItem('genba:'+k)) ?? d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem('genba:'+k, JSON.stringify(v)); }catch(e){} }
+};
+
+const state = {
+  masters: LS.get('masters', {companies:[],reps:[],clients:[]}),
+  jobs:    LS.get('jobs', []),
+  queue:   LS.get('queue', []),
+  user:    LS.get('user', ''),
+  token:   LS.get('token', ''),
+  editing: null,         // 編集中のJOBID（新規は null）
+  original: null,        // 編集前の値（差分計算用）
+  returnTo: 'form',      // 追加画面から戻る先
+  syncing: false
+};
+
+/* ── 起動 ───────────────────────────────────────── */
+function boot(){
+  if(!state.token) askToken();
+  if(!state.user) pickUser(true);
+  $('whoBtn').textContent = state.user || '担当者を選ぶ';
+  fillCompanies();
+  fillSuggestions();
+  openNew();
+  renderList();
+  updateStatus();
+  sync();
+}
+
+function askToken(){
+  const v = prompt('合言葉を入力してください（この端末に保存され、次回から聞かれません）', state.token || '');
+  if(v === null) return false;
+  state.token = v.trim(); LS.set('token', state.token);
+  return true;
+}
+
+function pickUser(force){
+  const list = CFG.USERS;
+  const cur  = list.indexOf(state.user);
+  const next = list[(cur + 1) % list.length] || list[0];
+  const name = force ? (list[0] || '') : next;
+  state.user = name; LS.set('user', name);
+  $('whoBtn').textContent = name || '担当者を選ぶ';
+}
+$('whoBtn').onclick = () => { pickUser(false); toast('入力者を' + state.user + 'にしました'); };
+
+/* ── プルダウン ─────────────────────────────────── */
+function opt(v, t){ const o = document.createElement('option'); o.value = v; o.textContent = t; return o; }
+
+function fillCompanies(){
+  const s = $('companyId'); const keep = s.value;
+  s.textContent = ''; s.appendChild(opt('', '選択してください'));
+  state.masters.companies.forEach(c => s.appendChild(opt(c.id, c.short || c.name)));
+  s.value = [...s.options].some(o => o.value === keep) ? keep : '';
+  onCompanyChanged();
+}
+
+function fillReps(){
+  const cid = $('companyId').value;
+  const list = state.masters.reps
+    .filter(r => String(r.companyId) === cid)
+    .sort((a,b) => (Number(a.sort)||0) - (Number(b.sort)||0));
+  const s = $('repId'); const keep = s.value;
+  s.textContent = ''; s.appendChild(opt('', '（指定なし）'));
+  list.forEach(r => s.appendChild(opt(r.id, r.name + (r.title ? '　' + r.title : ''))));
+  s.value = [...s.options].some(o => o.value === keep) ? keep : '';
+}
+
+function fillClients(){
+  const cid = $('companyId').value, rid = $('repId').value;
+  const list = state.masters.clients.filter(c =>
+    String(c.companyId) === cid &&
+    (rid ? String(c.repId) === rid : true) &&
+    String(c.hidden).toUpperCase() !== 'TRUE');
+  const s = $('clientId'); const keep = s.value;
+  s.textContent = ''; s.appendChild(opt('', '（指定なし）'));
+  list.forEach(c => s.appendChild(opt(c.id, c.name)));
+  s.value = [...s.options].some(o => o.value === keep) ? keep : '';
+}
+
+function onCompanyChanged(){
+  const has = !!$('companyId').value;
+  $('f-rep').classList.toggle('hide', !has);
+  $('addRepBtn').classList.toggle('hide', !has);
+  $('f-client').classList.toggle('hide', !has);
+  $('addClientBtn').classList.toggle('hide', !has);
+  fillReps(); fillClients();
+}
+
+$('companyId').onchange = onCompanyChanged;
+$('repId').onchange = fillClients;
+
+/* ── 候補（過去の入力から） ─────────────────────── */
+function fillSuggestions(){
+  const recent = [...state.jobs].sort((a,b) => (b.planDate||'').localeCompare(a.planDate||''));
+  const put = (listId, key) => {
+    const seen = new Set(), dl = $(listId); dl.textContent = '';
+    for(const j of recent){
+      const v = (j[key]||'').trim();
+      if(v && !seen.has(v)){ seen.add(v); dl.appendChild(opt(v, v)); }
+      if(seen.size >= 60) break;
+    }
+  };
+  put('sites','site'); put('works','work');
+}
+
+/* 過去に行った現場を選んだら、会社・担当・販売先を引き継ぐ */
+$('site').onchange = () => {
+  if(state.editing || $('companyId').value) return;
+  const v = $('site').value.trim(); if(!v) return;
+  const hit = [...state.jobs].sort((a,b)=>(b.planDate||'').localeCompare(a.planDate||''))
+                             .find(j => (j.site||'').trim() === v);
+  if(!hit) return;
+  $('companyId').value = hit.companyId || '';
+  onCompanyChanged();
+  $('repId').value = hit.repId || ''; fillClients();
+  $('clientId').value = hit.clientId || '';
+  toast('前回の取引先を引き継ぎました');
+};
+
+$('mirror').onchange = () => {
+  $('f-done').classList.toggle('hide', $('mirror').checked);
+  $('planLabel').textContent = $('mirror').checked ? '作業日' : '作業予定日';
+};
+$('toll').oninput = () => {
+  const on = Number($('toll').value) > 0;
+  $('f-ic1').classList.toggle('hide', !on);
+  $('f-ic2').classList.toggle('hide', !on);
+};
+
+/* ── フォーム ───────────────────────────────────── */
+function today(){
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+}
+
+function openNew(){
+  state.editing = null; state.original = null;
+  const t = today();
+  setForm({planDate:t, doneDate:t, assessed:'FALSE', billed:'FALSE'});
+  $('mirror').checked = true;
+  $('f-done').classList.add('hide');
+  $('planLabel').textContent = '作業日';
+  $('cancelBtn').classList.add('hide');
+  $('deleteBtn').classList.add('hide');
+  $('saveBtn').textContent = '保存する';
+  showView('form');
+}
+
+function openEdit(jobId){
+  const job = state.jobs.find(j => j.jobId === jobId); if(!job) return;
+  state.editing = jobId; state.original = {...job};
+  setForm(job);
+  const same = (job.planDate || '') === (job.doneDate || '');
+  $('mirror').checked = same;
+  $('f-done').classList.toggle('hide', same);
+  $('planLabel').textContent = same ? '作業日' : '作業予定日';
+  $('cancelBtn').classList.remove('hide');
+  $('deleteBtn').classList.remove('hide');
+  $('saveBtn').textContent = '更新する';
+  showView('form');
+  document.querySelector('main').scrollTop = 0;
+}
+
+function setForm(j){
+  $('planDate').value = j.planDate || '';
+  $('doneDate').value = j.doneDate || '';
+  $('companyId').value = j.companyId || '';
+  onCompanyChanged();
+  $('repId').value = j.repId || ''; fillClients();
+  $('clientId').value = j.clientId || '';
+  $('site').value = j.site || '';
+  $('work').value = j.work || '';
+  $('amount').value = num(j.amount);
+  $('parking').value = num(j.parking);
+  $('toll').value = num(j.toll);
+  $('fromIc').value = j.fromIc || '';
+  $('toIc').value = j.toIc || '';
+  $('note').value = j.note || '';
+  $('assessed').checked = String(j.assessed).toUpperCase() === 'TRUE';
+  $('billed').checked   = String(j.billed).toUpperCase() === 'TRUE';
+  const on = Number(num(j.toll)) > 0;
+  $('f-ic1').classList.toggle('hide', !on);
+  $('f-ic2').classList.toggle('hide', !on);
+}
+
+function num(v){ const s = String(v ?? '').replace(/[,\s￥¥]/g,''); return s === '' ? '' : s; }
+
+function readForm(){
+  const mirrored = $('mirror').checked;
+  return {
+    planDate: $('planDate').value,
+    doneDate: mirrored ? $('planDate').value : $('doneDate').value,
+    companyId: $('companyId').value,
+    repId: $('repId').value,
+    clientId: $('clientId').value,
+    site: $('site').value.trim(),
+    work: $('work').value.trim(),
+    amount: $('amount').value,
+    parking: $('parking').value,
+    toll: $('toll').value,
+    note: $('note').value.trim(),
+    assessed: $('assessed').checked ? 'TRUE' : 'FALSE',
+    billed:   $('billed').checked ? 'TRUE' : 'FALSE',
+    fromIc: $('fromIc').value.trim(),
+    toIc: $('toIc').value.trim()
+  };
+}
+
+$('deleteBtn').onclick = () => {
+  const job = state.jobs.find(j => j.jobId === state.editing); if(!job) return;
+  if(!confirm('この記録を削除します。\n\n' + (job.planDate||'') + '　' + (job.site||'') + '\n\n元に戻せません。よろしいですか？')) return;
+  enqueue({opId:uid(16), type:'delete', jobId:state.editing});
+  state.jobs = state.jobs.filter(j => j.jobId !== state.editing);
+  LS.set('jobs', state.jobs);
+  toast('削除しました');
+  renderList(); openNew(); sync();
+};
+
+/* ── マスタの追加 ─────────────────────────────── */
+$('addCompanyBtn').onclick = () => {
+  $('nc-name').value = ''; $('nc-short').value = '';
+  $('nc-closing').value = '末日'; $('nc-span').value = '翌月';
+  $('nc-address').value = ''; $('nc-tel').value = '';
+  showView('addCompany');
+};
+
+$('addRepBtn').onclick = () => {
+  const c = state.masters.companies.find(c => c.id === $('companyId').value);
+  $('addRepLead').textContent = (c ? (c.short||c.name) : 'この会社') + ' の営業担当として登録します。シートの担当者一覧にも追加されます。';
+  $('nr-name').value = ''; $('nr-title').value = '';
+  showView('addRep');
+};
+
+$('addClientBtn').onclick = () => {
+  const c = state.masters.companies.find(c => c.id === $('companyId').value);
+  const r = state.masters.reps.find(r => r.id === $('repId').value);
+  $('addClientLead').textContent = (c ? (c.short||c.name) : 'この会社') + (r ? '　' + r.name : '') + ' の元請として登録します。シートの販売先一覧にも追加されます。';
+  $('nl-name').value = '';
+  showView('addClient');
+};
+
+/* 追加画面それぞれに「やめる／追加する」を actions バーに動的表示する */
+function showView(which){
+  ['form','addCompany','addRep','addClient','list'].forEach(v => {
+    $('v-' + v).classList.toggle('on', v === which);
+  });
+  $('tab-form').setAttribute('aria-pressed', which === 'form');
+  $('tab-list').setAttribute('aria-pressed', which === 'list');
+
+  const isAdd = which === 'addCompany' || which === 'addRep' || which === 'addClient';
+  $('actions').classList.toggle('hide', which === 'list');
+  $('cancelBtn').classList.toggle('hide', which === 'form' && !state.editing);
+  $('deleteBtn').classList.toggle('hide', !(which === 'form' && state.editing));
+
+  if(isAdd){
+    $('cancelBtn').classList.remove('hide');
+    $('deleteBtn').classList.add('hide');
+    $('saveBtn').textContent = '追加する';
+    $('cancelBtn').onclick = () => showView('form');
+    $('saveBtn').onclick = which === 'addCompany' ? saveNewCompany
+                          : which === 'addRep' ? saveNewRep
+                          : saveNewClient;
+  } else if(which === 'form'){
+    $('saveBtn').textContent = state.editing ? '更新する' : '保存する';
+    $('cancelBtn').onclick = openNew;
+    $('saveBtn').onclick = doSaveJob;
+  }
+}
+
+function doSaveJob(){
+  const f = readForm();
+  if(!f.planDate){ return toast('作業日を入れてください', true); }
+  if(!f.companyId){ return toast('取引会社を選んでください', true); }
+  if(!f.site){ return toast('現場名を入れてください', true); }
+
+  if(state.editing){
+    const diff = {};
+    for(const k in f){ if(String(f[k]) !== String(state.original[k] ?? '')) diff[k] = f[k]; }
+    if(!Object.keys(diff).length){ toast('変更はありません'); return openNew(); }
+    diff.enteredBy = state.user;
+    enqueue({opId:uid(16), type:'update', jobId:state.editing, fields:diff});
+    upsertLocal({...state.original, ...diff});
+    toast('更新しました');
+  }else{
+    const jobId = uid(8);
+    const fields = {...f, enteredBy: state.user};
+    enqueue({opId:uid(16), type:'create', jobId, fields});
+    upsertLocal({jobId, ...fields});
+    toast('保存しました');
+  }
+  fillSuggestions(); renderList(); openNew(); sync();
+}
+
+function saveNewCompany(){
+  const name = $('nc-name').value.trim();
+  if(!name){ return toast('会社名を入れてください', true); }
+  const id = uid(8);
+  const company = {
+    id, name,
+    short: $('nc-short').value.trim() || name,
+    address: $('nc-address').value.trim(),
+    tel: $('nc-tel').value.trim(),
+    closing: $('nc-closing').value,
+    span: $('nc-span').value
+  };
+  state.masters.companies.push(company);
+  LS.set('masters', state.masters);
+  enqueue({opId:uid(16), type:'createCompany', id, fields:{
+    name, short:company.short, address:company.address, tel:company.tel, closing:company.closing, span:company.span
+  }});
+  fillCompanies();
+  $('companyId').value = id; onCompanyChanged();
+  toast('取引会社を追加しました');
+  showView('form');
+  sync();
+}
+
+function saveNewRep(){
+  const name = $('nr-name').value.trim();
+  if(!name){ return toast('氏名を入れてください', true); }
+  const id = uid(8);
+  const companyId = $('companyId').value;
+  const title = $('nr-title').value.trim();
+  state.masters.reps.push({ id, companyId, name, title, sort: '' });
+  LS.set('masters', state.masters);
+  enqueue({opId:uid(16), type:'createRep', id, fields:{ name, title, companyId }});
+  fillReps();
+  $('repId').value = id; fillClients();
+  toast('担当者を追加しました');
+  showView('form');
+  sync();
+}
+
+function saveNewClient(){
+  const name = $('nl-name').value.trim();
+  if(!name){ return toast('販売先の名前を入れてください', true); }
+  const id = uid(8);
+  const companyId = $('companyId').value;
+  const repId = $('repId').value;
+  state.masters.clients.push({ id, companyId, repId, name, hidden:'' });
+  LS.set('masters', state.masters);
+  enqueue({opId:uid(16), type:'createClient', id, fields:{ name, companyId, repId }});
+  fillClients();
+  $('clientId').value = id;
+  toast('販売先を追加しました');
+  showView('form');
+  sync();
+}
+
+function uid(n){
+  const a = new Uint8Array(Math.ceil(n/2)); crypto.getRandomValues(a);
+  return [...a].map(b => b.toString(16).padStart(2,'0')).join('').slice(0,n);
+}
+
+function upsertLocal(job){
+  const full = {}; KEYS.forEach(k => full[k] = job[k] ?? '');
+  const i = state.jobs.findIndex(j => j.jobId === full.jobId);
+  if(i >= 0) state.jobs[i] = full; else state.jobs.push(full);
+  LS.set('jobs', state.jobs);
+}
+
+/* ── 送信キュー ─────────────────────────────────── */
+function enqueue(op){
+  const q = state.queue;
+  if(op.type === 'delete'){
+    const hadCreate = q.some(o => o.jobId === op.jobId && o.type === 'create');
+    state.queue = q.filter(o => o.jobId !== op.jobId);
+    if(!hadCreate) state.queue.push(op);
+  }else if(op.type === 'update'){
+    const prev = q.find(o => o.jobId === op.jobId && (o.type === 'create' || o.type === 'update'));
+    if(prev) Object.assign(prev.fields, op.fields); else q.push(op);
+  }else{
+    q.push(op);
+  }
+  LS.set('queue', state.queue);
+  updateStatus();
+}
+
+async function sync(){
+  if(state.syncing || !navigator.onLine) return updateStatus();
+  state.syncing = true; updateStatus();
+  try{
+    if(state.queue.length){
+      const res = await post({token:state.token, user:state.user, ops:state.queue});
+      if(!res.ok) throw new Error(res.error || '送信できませんでした');
+      const failed = [];
+      (res.results || []).forEach(r => { if(!r.ok) failed.push(r); });
+      const okIds = new Set((res.results||[]).filter(r => r.ok).map(r => r.opId));
+      state.queue = state.queue.filter(o => !okIds.has(o.opId));
+      LS.set('queue', state.queue);
+      if(failed.length) toast(failed[0].error || '一部を送信できませんでした', true);
+    }
+    await refresh();
+  }catch(e){
+    if(String(e.message||'').indexOf('合言葉') >= 0){
+      toast('合言葉が違います', true);
+      state.token = ''; LS.set('token', '');
+      if(askToken()){ state.syncing = false; return sync(); }
+    }
+    /* 通信できないだけなら静かに諦める。キューは残るので次回送信される。 */
+  }finally{
+    state.syncing = false; updateStatus();
+  }
+}
+
+async function post(body){
+  const r = await fetch(CFG.GAS_URL, {
+    method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(body), redirect:'follow'
+  });
+  return r.json();
+}
+
+async function refresh(){
+  const r = await fetch(CFG.GAS_URL + '?token=' + encodeURIComponent(state.token), {redirect:'follow'});
+  const d = await r.json();
+  if(!d.ok) throw new Error(d.error || '読み込めませんでした');
+
+  state.masters = d.masters; LS.set('masters', d.masters);
+  state.jobs = d.jobs.map(j => { const o = {}; KEYS.forEach(k => o[k] = j[k] ?? ''); return o; });
+
+  // まだ送れていない分はローカルの内容を優先する（マスタ追加分も残す）
+  const localCompanies = LS.get('masters', {companies:[]}).companies.filter(c => !state.masters.companies.some(x => x.id === c.id));
+  state.masters.companies = state.masters.companies.concat(localCompanies);
+
+  state.queue.forEach(op => {
+    if(op.type === 'delete') state.jobs = state.jobs.filter(j => j.jobId !== op.jobId);
+    else if(op.type === 'create' || op.type === 'update'){
+      const i = state.jobs.findIndex(j => j.jobId === op.jobId);
+      if(i >= 0) Object.assign(state.jobs[i], op.fields);
+      else { const o = {jobId:op.jobId}; KEYS.forEach(k => o[k] = op.fields[k] ?? ''); state.jobs.push(o); }
+    }else if(op.type === 'createCompany' && !state.masters.companies.some(c => c.id === op.id)){
+      state.masters.companies.push({ id: op.id, name: op.fields.name, short: op.fields.short || op.fields.name });
+    }else if(op.type === 'createRep' && !state.masters.reps.some(r => r.id === op.id)){
+      state.masters.reps.push({ id: op.id, companyId: op.fields.companyId, name: op.fields.name, title: op.fields.title, sort:'' });
+    }else if(op.type === 'createClient' && !state.masters.clients.some(c => c.id === op.id)){
+      state.masters.clients.push({ id: op.id, companyId: op.fields.companyId, repId: op.fields.repId, name: op.fields.name, hidden:'' });
+    }
+  });
+  LS.set('jobs', state.jobs);
+  LS.set('masters', state.masters);
+  LS.set('syncedAt', d.syncedAt);
+  fillCompanies(); fillSuggestions(); renderList();
+}
+
+/* ── 一覧 ───────────────────────────────────────── */
+function renderList(){
+  const pending = new Set(state.queue.filter(o => o.jobId).map(o => o.jobId));
+  const body = $('listBody'); body.textContent = '';
+
+  const jobs = [...state.jobs].sort((a,b) =>
+    (b.planDate||'').localeCompare(a.planDate||'') || (b.jobId||'').localeCompare(a.jobId||''));
+
+  if(!jobs.length){
+    const p = document.createElement('p'); p.className = 'empty';
+    p.textContent = '記録はまだありません。入力タブから追加してください。';
+    body.appendChild(p); return;
+  }
+
+  const names = Object.fromEntries(state.masters.companies.map(c => [String(c.id), c.short || c.name]));
+  let lastDay = '';
+  for(const j of jobs){
+    if(j.planDate !== lastDay){
+      lastDay = j.planDate;
+      const h = document.createElement('div'); h.className = 'daysep';
+      h.textContent = fmtDay(j.planDate); body.appendChild(h);
+    }
+    const b = document.createElement('button');
+    b.className = 'job ' + (pending.has(j.jobId) ? 'pend' : 'done');
+    b.onclick = () => openEdit(j.jobId);
+
+    const top = document.createElement('div'); top.className = 'top';
+    const co = document.createElement('span'); co.textContent = names[String(j.companyId)] || '—';
+    const am = document.createElement('span'); am.className = 'amt';
+    am.textContent = j.amount === '' ? (pending.has(j.jobId) ? '未送信' : '') : '¥' + Number(String(j.amount).replace(/,/g,'')).toLocaleString('ja-JP');
+    top.append(co, am);
+
+    const site = document.createElement('div'); site.className = 'site'; site.textContent = j.site || '（現場名なし）';
+    const work = document.createElement('div'); work.className = 'work'; work.textContent = j.work || '';
+    b.append(top, site, work);
+    body.appendChild(b);
+  }
+}
+
+function fmtDay(s){
+  if(!s) return '日付なし';
+  const [y,m,d] = s.split('-').map(Number);
+  const w = '日月火水木金土'[new Date(y, m-1, d).getDay()];
+  return m + '月' + d + '日（' + w + '）';
+}
+
+/* ── 状態表示 ───────────────────────────────────── */
+function updateStatus(){
+  const n = state.queue.length;
+  const dot = $('dot'), st = $('status'), badge = $('badge');
+  badge.textContent = n; badge.classList.toggle('hide', n === 0);
+
+  if(state.syncing){ dot.className = 'pend'; st.textContent = '送信中'; }
+  else if(!navigator.onLine){ dot.className = 'off'; st.textContent = n ? 'オフライン・未送信' + n + '件' : 'オフライン'; }
+  else if(n){ dot.className = 'pend'; st.textContent = '未送信' + n + '件'; }
+  else { dot.className = ''; st.textContent = '同期済み'; }
+}
+
+$('tab-form').onclick = () => showView('form');
+$('tab-list').onclick = () => { renderList(); showView('list'); };
+
+let toastTimer;
+function toast(msg, bad){
+  const t = $('toast'); t.textContent = msg;
+  t.className = 'on' + (bad ? ' bad' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = bad ? 'bad' : '', 2600);
+}
+
+addEventListener('online',  () => { updateStatus(); sync(); });
+addEventListener('offline', updateStatus);
+document.addEventListener('visibilitychange', () => { if(!document.hidden) sync(); });
+
+boot();
+
+if('serviceWorker' in navigator){
+  addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
