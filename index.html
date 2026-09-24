@@ -19,8 +19,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;min-width:0;overflow-wrap:break-word}
 html{
   height:100%;width:100%;overflow:hidden;
-  position:fixed;top:0;left:0;right:0;bottom:0;
-  touch-action:none;overscroll-behavior:none;
+  touch-action:pan-y;overscroll-behavior-x:none;
 }
 html,body{margin:0}
 body{
@@ -32,8 +31,7 @@ body{
   height:100%; width:100%; max-width:100%;
   padding-top:env(safe-area-inset-top);
   overflow:hidden;
-  position:fixed; top:0; left:0; right:0; bottom:0;
-  touch-action:none; overscroll-behavior:none;
+  touch-action:pan-y; overscroll-behavior-x:none;
 }
 button,input,select,textarea{font:inherit;color:inherit;max-width:100%;touch-action:manipulation}
 
