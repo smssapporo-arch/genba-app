@@ -57,8 +57,11 @@ input[type=text],input[type=date],input[type=tel],input[type=number],select,text
   box-sizing:border-box;
 }
 /* iOS Safariは type=date の内部レイアウト都合で、指定幅より広く描画することがある。
-   .fieldのoverflow:hiddenで確実に切り取り、ページ全体には絶対に影響させない。 */
-input[type=date]{padding-left:8px;padding-right:8px}
+   .fieldのoverflow:hiddenで確実に切り取り、ページ全体には絶対に影響させない。
+   さらに左右の余白を切り詰めて、切れる幅そのものを小さくする。 */
+input[type=date]{padding-left:2px;padding-right:2px}
+input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
+input[type=date]::-webkit-calendar-picker-indicator{margin-left:2px;padding:6px}
 select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 23px,calc(100% - 12px) 23px;background-size:6px 6px;background-repeat:no-repeat}
 textarea{min-height:76px;resize:vertical}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--blue);outline-offset:1px;border-color:var(--blue)}
