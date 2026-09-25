@@ -46,15 +46,19 @@ button,input,select,textarea{font:inherit;color:inherit;max-width:100%;touch-act
 #status{font-size:13px;letter-spacing:.02em}
 
 main{flex:1;overflow-y:scroll;overflow-x:hidden;-webkit-overflow-scrolling:touch;width:100%;max-width:100vw;touch-action:pan-y;overscroll-behavior-y:contain;overscroll-behavior-x:none;position:relative}
-.view{display:none;padding:14px 12px 120px;width:100%;max-width:100%}
+.view{display:none;padding:14px 12px 120px;width:100%;max-width:100%;overflow-x:hidden}
 .view.on{display:block}
 
-.field{margin-bottom:12px}
+.field{margin-bottom:12px;overflow:hidden;max-width:100%}
 .field>label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
 input[type=text],input[type=date],input[type=tel],input[type=number],select,textarea{
-  width:100%;max-width:100%;min-height:var(--tap);padding:10px 12px;
+  display:block;width:100%;max-width:100%;min-height:var(--tap);padding:10px 12px;
   background:var(--card);border:1px solid var(--line);border-radius:10px;
+  box-sizing:border-box;
 }
+/* iOS Safariは type=date の内部レイアウト都合で、指定幅より広く描画することがある。
+   .fieldのoverflow:hiddenで確実に切り取り、ページ全体には絶対に影響させない。 */
+input[type=date]{padding-left:8px;padding-right:8px}
 select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 23px,calc(100% - 12px) 23px;background-size:6px 6px;background-repeat:no-repeat}
 textarea{min-height:76px;resize:vertical}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--blue);outline-offset:1px;border-color:var(--blue)}
