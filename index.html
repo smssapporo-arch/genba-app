@@ -123,9 +123,6 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--blue);outline-of
 #toast.on{opacity:1;transform:none}
 #toast.bad{background:var(--red)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-#dbg{position:fixed;left:2px;top:2px;z-index:99999;background:rgba(220,0,0,.9);color:#fff;
-  font-size:10px;line-height:1.35;padding:3px 5px;border-radius:6px;font-family:monospace;
-  pointer-events:none;white-space:pre}
 </style>
 </head>
 <body>
@@ -793,27 +790,6 @@ document.addEventListener('visibilitychange', () => { if(!document.hidden) sync(
     }
     if(axis === 'x') e.preventDefault();
   }, opts2);
-})();
-
-/* ── 診断表示（原因調査用。左上に小さく数値を出す） ── */
-(function(){
-  const d = document.createElement('div'); d.id = 'dbg'; document.body.appendChild(d);
-  function upd(){
-    const h = document.documentElement, b = document.body, m = document.querySelector('main');
-    d.textContent =
-      'iw:' + innerWidth +
-      ' hSW:' + h.scrollWidth + ' hSL:' + h.scrollLeft +
-      ' bSW:' + b.scrollWidth + ' bSL:' + b.scrollLeft +
-      ' mSW:' + (m ? m.scrollWidth : '-') + ' mSL:' + (m ? m.scrollLeft : '-') +
-      ' vv:' + (window.visualViewport ? Math.round(window.visualViewport.width) + '/' + Math.round(window.visualViewport.offsetLeft) : '-');
-  }
-  upd();
-  addEventListener('scroll', upd, true);
-  addEventListener('touchmove', upd, true);
-  addEventListener('touchend', upd, true);
-  addEventListener('resize', upd);
-  if(window.visualViewport) window.visualViewport.addEventListener('resize', upd);
-  setInterval(upd, 250);
 })();
 
 boot();
