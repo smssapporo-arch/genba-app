@@ -659,8 +659,10 @@ async function sync(){
       toast('合言葉が違います', true);
       state.token = ''; LS.set('token', '');
       if(askToken()){ state.syncing = false; return sync(); }
+    }else{
+      /* 原因調査用：取得に失敗した内容をそのまま表示する。 */
+      toast('取得できませんでした: ' + String(e && e.message || e), true);
     }
-    /* 通信できないだけなら静かに諦める。キューは残るので次回送信される。 */
   }finally{
     state.syncing = false; updateStatus();
   }
