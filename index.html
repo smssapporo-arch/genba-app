@@ -671,13 +671,16 @@ async function sync(){
 async function post(body){
   const r = await fetch(CFG.GAS_URL, {
     method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify(body), redirect:'follow'
+    body: JSON.stringify(body), redirect:'follow', cache:'no-store'
   });
   return r.json();
 }
 
 async function refresh(){
-  const r = await fetch(CFG.GAS_URL + '?token=' + encodeURIComponent(state.token), {redirect:'follow'});
+  // 更新直後の再取得が古い内容をキャッシュから拾わないよう、
+  // 毎回違うURLになる目印を付け、ブラウザキャッシュも明示的に使わせない。
+  const r = await fetch(CFG.GAS_URL + '?token=' + encodeURIComponent(state.token) + '&_t=' + Date.now(),
+    {redirect:'follow', cache:'no-store'});
   const d = await r.json();
   if(!d.ok) throw new Error(d.error || '読み込めませんでした');
 
