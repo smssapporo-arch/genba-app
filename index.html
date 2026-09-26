@@ -646,6 +646,8 @@ async function sync(){
     if(state.queue.length){
       const res = await post({token:state.token, user:state.user, ops:state.queue});
       if(!res.ok) throw new Error(res.error || '送信できませんでした');
+      /* 原因調査用：送信した内容とサーバーの応答をそのまま表示する（後で消す）。 */
+      alert('送信内容:\n' + JSON.stringify(state.queue, null, 1) + '\n\n応答:\n' + JSON.stringify(res.results, null, 1));
       const failed = [];
       (res.results || []).forEach(r => { if(!r.ok) failed.push(r); });
       const okIds = new Set((res.results||[]).filter(r => r.ok).map(r => r.opId));

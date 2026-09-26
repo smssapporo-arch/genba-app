@@ -1,6 +1,6 @@
 /* アプリ本体をキャッシュして、オフラインでも即起動できるようにする。
    index.html などを直したら CACHE の番号を上げること。 */
-const CACHE = 'genba-v9';
+const CACHE = 'genba-v10';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
