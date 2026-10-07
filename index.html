@@ -660,10 +660,8 @@ function enqueue(op){
   updateStatus();
 }
 
-async function sync(){
-  if(state.syncing || !navigator.onLine) return updateStatus();
-  state.syncing = true; updateStatus();
-  try{
+/* 1回分の送信＋再取得。失敗したら例外を投げる。 */
+async function syncOnce(){
     if(state.queue.length){
       const res = await post({token:state.token, user:state.user, ops:state.queue});
       if(!res.ok) throw new Error(res.error || '送信できませんでした');
@@ -675,18 +673,51 @@ async function sync(){
       if(failed.length) toast(failed[0].error || '一部を送信できませんでした', true);
     }
     await refresh();
-  }catch(e){
-    if(String(e.message||'').indexOf('合言葉') >= 0){
-      toast('合言葉が違います', true);
-      state.token = ''; LS.set('token', '');
-      if(askToken()){ state.syncing = false; return sync(); }
-    }else{
-      /* 原因調査用：取得に失敗した内容をそのまま表示する。 */
-      toast('取得できませんでした: ' + String(e && e.message || e), true);
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* Googleが一時的にエラーページを返すことがあるので、
+   その場合は数秒おいて最大2回まで黙ってやり直す。
+   それでもだめなときだけ、日本語で知らせる。 */
+async function sync(){
+  if(state.syncing || !navigator.onLine) return updateStatus();
+  state.syncing = true; updateStatus();
+  try{
+    for(let attempt = 0; ; attempt++){
+      try{
+        await syncOnce();
+        break;
+      }catch(e){
+        const msg = String(e && e.message || e);
+        if(msg.indexOf('合言葉') >= 0){
+          toast('合言葉が違います', true);
+          state.token = ''; LS.set('token', '');
+          if(askToken()){ state.syncing = false; return sync(); }
+          break;
+        }
+        const transient = !!(e && (e.transient || e.name === 'TypeError'));
+        if(transient && attempt < 2){ await sleep(attempt === 0 ? 3000 : 8000); continue; }
+        if(transient){
+          toast(state.queue.length
+            ? '通信できませんでした。入力はこの端末に保存されていて、あとで自動で送ります'
+            : '通信できませんでした。少し時間をおいて開き直してください', true);
+        }else{
+          toast('取得できませんでした: ' + msg, true);
+        }
+        break;
+      }
     }
   }finally{
     state.syncing = false; updateStatus();
   }
+}
+
+/* 返ってきた中身がJSONでなければ（Googleのエラーページなど）一時的な失敗として扱う */
+async function readJson(r){
+  const text = await r.text();
+  try{ return JSON.parse(text); }
+  catch(_){ const err = new Error('一時的に通信できませんでした'); err.transient = true; throw err; }
 }
 
 async function post(body){
@@ -694,7 +725,7 @@ async function post(body){
     method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify(body), redirect:'follow', cache:'no-store'
   });
-  return r.json();
+  return readJson(r);
 }
 
 async function refresh(){
@@ -702,7 +733,7 @@ async function refresh(){
   // 毎回違うURLになる目印を付け、ブラウザキャッシュも明示的に使わせない。
   const r = await fetch(CFG.GAS_URL + '?token=' + encodeURIComponent(state.token) + '&_t=' + Date.now(),
     {redirect:'follow', cache:'no-store'});
-  const d = await r.json();
+  const d = await readJson(r);
   if(!d.ok) throw new Error(d.error || '読み込めませんでした');
 
   state.masters = d.masters; LS.set('masters', d.masters);
