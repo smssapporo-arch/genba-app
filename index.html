@@ -94,6 +94,11 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--blue);outline-of
   border:1px solid var(--line);border-left:4px solid var(--line);
   border-radius:10px;padding:12px 13px;margin-bottom:8px
 }
+.jobrow{display:flex;gap:6px;margin-bottom:8px;align-items:stretch}
+.jobrow .job{flex:1;margin-bottom:0}
+.copybtn{flex:0 0 60px;min-height:var(--tap);background:var(--card);border:1px solid var(--line);border-radius:10px;color:var(--blue);font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px}
+.copybtn svg{width:20px;height:20px}
+.copybtn:active{background:#dde5ea}
 .job.pend{border-left-color:var(--amber)}
 .job.done{border-left-color:var(--green)}
 .job .top{display:flex;gap:8px;font-size:13px;color:var(--muted);margin-bottom:3px}
@@ -142,6 +147,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--blue);outline-of
 <main>
   <!-- 入力 -->
   <section class="view on" id="v-form">
+    <div class="hint hide" id="copyHint"></div>
     <div class="field"><label for="planDate" id="planLabel">作業日</label>
       <input type="date" id="planDate"></div>
     <div class="field hide" id="f-done"><label for="doneDate">完了日</label>
@@ -398,6 +404,7 @@ function today(){
 
 function openNew(){
   state.editing = null; state.original = null;
+  $('copyHint').classList.add('hide');
   const t = today();
   setForm({planDate:t, doneDate:t, assessed:'FALSE', billed:'FALSE'});
   $('mirror').checked = true;
@@ -412,6 +419,7 @@ function openNew(){
 function openEdit(jobId){
   const job = state.jobs.find(j => j.jobId === jobId); if(!job) return;
   state.editing = jobId; state.original = {...job};
+  $('copyHint').classList.add('hide');
   setForm(job);
   const same = (job.planDate || '') === (job.doneDate || '');
   $('mirror').checked = same;
@@ -422,6 +430,19 @@ function openEdit(jobId){
   $('saveBtn').textContent = '更新する';
   showView('form');
   document.querySelector('main').scrollTop = 0;
+}
+
+/* 一覧の「複製」：取引先・現場・内容・金額などを引き継いで新規入力にする。
+   日付は今日、備考・査定済み・請求済みは空に戻す。 */
+function openCopy(jobId){
+  const job = state.jobs.find(j => j.jobId === jobId); if(!job) return;
+  openNew();
+  const t = today();
+  setForm({...job, planDate:t, doneDate:t, note:'', assessed:'FALSE', billed:'FALSE'});
+  $('copyHint').textContent = fmtDay(job.planDate) + '「' + (job.site||'') + '」を複製しました。日付は今日になっています。直すところだけ直して保存してください。';
+  $('copyHint').classList.remove('hide');
+  document.querySelector('main').scrollTop = 0;
+  toast('複製しました。まだ保存されていません');
 }
 
 function setForm(j){
@@ -733,6 +754,7 @@ function renderList(){
       const h = document.createElement('div'); h.className = 'daysep';
       h.textContent = fmtDay(j.planDate); body.appendChild(h);
     }
+    const row = document.createElement('div'); row.className = 'jobrow';
     const b = document.createElement('button');
     b.className = 'job ' + (pending.has(j.jobId) ? 'pend' : 'done');
     b.onclick = () => openEdit(j.jobId);
@@ -746,7 +768,15 @@ function renderList(){
     const site = document.createElement('div'); site.className = 'site'; site.textContent = j.site || '（現場名なし）';
     const work = document.createElement('div'); work.className = 'work'; work.textContent = j.work || '';
     b.append(top, site, work);
-    body.appendChild(b);
+
+    const cp = document.createElement('button');
+    cp.className = 'copybtn'; cp.type = 'button';
+    cp.setAttribute('aria-label', (j.site || '') + ' を複製して新規入力');
+    cp.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg><span>複製</span>';
+    cp.onclick = () => openCopy(j.jobId);
+
+    row.append(b, cp);
+    body.appendChild(row);
   }
 }
 
