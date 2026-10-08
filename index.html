@@ -329,7 +329,7 @@ function fillReps(){
     .filter(r => String(r.companyId) === cid)
     .sort((a,b) => (Number(a.sort)||0) - (Number(b.sort)||0));
   const s = $('repId'); const keep = s.value;
-  s.textContent = ''; s.appendChild(opt('', '（指定なし）'));
+  s.textContent = ''; s.appendChild(opt('', list.length ? '（指定なし）' : '（該当なし）'));
   list.forEach(r => s.appendChild(opt(r.id, r.name + (r.title ? '　' + r.title : ''))));
   s.value = [...s.options].some(o => o.value === keep) ? keep : '';
 }
@@ -341,7 +341,7 @@ function fillClients(){
     (rid ? String(c.repId) === rid : true) &&
     String(c.hidden).toUpperCase() !== 'TRUE');
   const s = $('clientId'); const keep = s.value;
-  s.textContent = ''; s.appendChild(opt('', '（指定なし）'));
+  s.textContent = ''; s.appendChild(opt('', list.length ? '（指定なし）' : '（該当なし）'));
   list.forEach(c => s.appendChild(opt(c.id, c.name)));
   s.value = [...s.options].some(o => o.value === keep) ? keep : '';
 }
